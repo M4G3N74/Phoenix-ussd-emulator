@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="description" content="USSD Emulator">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, minimal-ui">
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="msapplication-tap-highlight" content="no">
+        <title>Morden Loans USSD</title>
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://kit.fontawesome.com/d676b0cfd1.js"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#6366f1',
+                            secondary: '#4f46e5',
+                            danger: '#ef4444',
+                            success: '#22c55e',
+                            dark: '#1e293b',
+                            light: '#f8fafc'
+                        }
+                    }
+                }
+            }
+        </script>
+        <style type="text/tailwindcss">
+            @layer utilities {
+                .scrollbar-thin::-webkit-scrollbar {
+                    width: 5px;
+                }
+                .scrollbar-thin::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                }
+                .scrollbar-thin::-webkit-scrollbar-thumb {
+                    background: #888;
+                    border-radius: 5px;
+                }
+                .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+
+                @keyframes pulse {
+                    0% {
+                        opacity: 0.4;
+                        transform: scale(1);
+                    }
+                    50% {
+                        opacity: 0.7;
+                        transform: scale(1.05);
+                    }
+                    100% {
+                        opacity: 0.4;
+                        transform: scale(1);
+                    }
+                }
+
+                .animate-pulse {
+                    animation: pulse 4s infinite ease-in-out;
+                }
+                .phone-frame {
+                    position: relative;
+                    width: 425px; /* Increased width */
+                    height: 850px; /* Increased height */
+                    background-color: #111;
+                    border-radius: 40px;
+                    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4), 0 0 0 12px #222;
+                    overflow: hidden;
+                    margin: 0 auto;
+                    transition: transform 0.3s ease;
+                    z-index: 10;
+                }
+
+                /* Add a subtle glow effect to the phone frame */
+                .phone-frame::after {
+                    content: '';
+                    position: absolute;
+                    top: -15px;
+                    left: -15px;
+                    right: -15px;
+                    bottom: -15px;
+                    background: linear-gradient(45deg, rgba(99, 102, 241, 0.3), rgba(79, 70, 229, 0.3));
+                    border-radius: 50px;
+                    z-index: -1;
+                    filter: blur(20px);
+                    opacity: 0;
+                    transition: opacity 0.5s ease;
+                }
+
+                .phone-frame:hover::after {
+                    opacity: 1;
+                }
+
+                .phone-frame:hover {
+                    transform: scale(1.02);
+                }
+                .phone-screen {
+                    position: absolute;
+                    top: 14px;
+                    left: 14px;
+                    right: 14px;
+                    bottom: 14px;
+                    background-color: #fff;
+                    border-radius: 35px;
+                    overflow: hidden;
+                    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+                }
+                .dark .phone-screen {
+                    background-color: #1a2234;
+                }
+                .phone-notch {
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 170px; /* Wider notch */
+                    height: 35px; /* Taller notch */
+                    background-color: #111;
+                    border-bottom-left-radius: 18px;
+                    border-bottom-right-radius: 18px;
+                    z-index: 10;
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                }
+
+                .phone-button {
+                    @apply bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-medium rounded-full flex items-center justify-center text-center overflow-hidden;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                    min-width: 0;
+                    max-width: 100%;
+                    transition: all 0.2s ease;
+                    position: relative;
+                    overflow: hidden;
+                }
+
+                .phone-button:active {
+                    @apply bg-gray-200 dark:bg-gray-600;
+                    transform: scale(0.95);
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                }
+
+                /* Add a subtle ripple effect to buttons */
+                .phone-button::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 5px;
+                    height: 5px;
+                    background: rgba(255, 255, 255, 0.4);
+                    opacity: 0;
+                    border-radius: 100%;
+                    transform: scale(1, 1) translate(-50%, -50%);
+                    transform-origin: 50% 50%;
+                }
+
+                .phone-button:active::after {
+                    animation: ripple 0.6s ease-out;
+                }
+
+                @keyframes ripple {
+                    0% {
+                        transform: scale(0, 0) translate(-50%, -50%);
+                        opacity: 0.5;
+                    }
+                    100% {
+                        transform: scale(20, 20) translate(-50%, -50%);
+                        opacity: 0;
+                    }
+                }
+                .phone-home-indicator {
+                    position: absolute;
+                    bottom: 10px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 140px;
+                    height: 6px;
+                    background-color: #000;
+                    border-radius: 4px;
+                    z-index: 10;
+                    opacity: 0.8;
+                }
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 dark:bg-gray-900 min-h-screen relative overflow-hidden">
+        <!-- Enhanced Flame Background Effect -->
+        <div class="absolute inset-0 opacity-20 pointer-events-none">
+            <div class="absolute top-0 left-1/4 w-1/2 h-1/2 bg-primary blur-[120px] animate-pulse"></div>
+            <div class="absolute bottom-0 right-1/4 w-1/2 h-1/2 bg-secondary blur-[120px] animate-pulse" style="animation-delay: 1s;"></div>
+            <div class="absolute top-1/4 right-1/4 w-1/3 h-1/3 bg-danger blur-[100px] animate-pulse" style="animation-delay: 2s;"></div>
+        </div>
+        <div class="container mx-auto px-4 py-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-bold text-gray-800 dark:text-white">Purple's USSD Emulator</h1>
+
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-8 items-start">
+                    <!-- Control Panel -->
+                    <div class="w-full md:w-1/3 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                        <button
+                            class="w-full mb-6 py-3 px-4 rounded-lg bg-danger hover:bg-red-600 text-white font-medium transition-colors"
+                            onclick="startAfresh()"
+                            id="startAfreshButton">End Test</button>
+
+                        <div class="space-y-4 svnum">
+                            <div class="text-gray-700 dark:text-gray-300 font-medium">Enter Phone Number</div>
+                            <div class="flex items-center">
+                                <div class="flex-none bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-l-lg border border-r-0 border-gray-300 dark:border-gray-600">
+                                    <span class="text-gray-700 dark:text-gray-300">+260</span>
+                                </div>
+                                <input
+                                    type="number"
+                                    name="phonenumber"
+                                    id="phonenumber"
+                                    class="flex-grow border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-r-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                                    value="123456789"
+                                    readonly>
+                            </div>
+
+                            <button
+                                class="w-full py-2 px-4 rounded-lg bg-secondary hover:bg-primary text-white font-medium transition-colors"
+                                onclick="saveNumber()"
+                                id="saveNumberButton">Save Number</button>
+                        </div>
+                    </div>
+
+                    <!-- Phone Emulator -->
+                    <div class="w-full md:w-2/3" id="emulatorDiv">
+                        <div class="phone-frame">
+                            <div class="phone-notch"></div>
+                            <div class="phone-screen">
+                                <!-- Status Bar -->
+                                <div class="px-5 py-3 flex justify-between items-center text-sm font-semibold text-white bg-gradient-to-r from-gray-900 to-gray-800 dark:from-gray-900 dark:to-gray-800">
+                                    <div id="statusBarTime" class="ml-2 text-base">15:41</div>
+                                    <div class="flex items-center space-x-4 mr-2">
+                                        <i class="fas fa-signal"></i>
+                                        <i class="fas fa-wifi"></i>
+                                        <i class="fas fa-battery-full"></i>
+                                    </div>
+                                </div>
+
+                                <!-- App Header -->
+                                <div class="bg-gradient-to-r from-primary to-secondary text-white p-4 text-center shadow-md">
+                                    <h2 class="text-xl font-medium">USSD Service</h2>
+                                </div>
+
+                                <!-- Display Output Area -->
+                                <div id="displayOutput" class="h-[300px] p-4 overflow-y-auto scrollbar-thin bg-white dark:bg-transparent relative">
+                                    <!-- Scan line effect -->
+                                    <div class="absolute inset-0 pointer-events-none opacity-10" style="background: linear-gradient(to bottom, transparent, transparent 50%, rgba(99, 102, 241, 0.1) 50%, rgba(99, 102, 241, 0.1)); background-size: 100% 4px;"></div>
+                                    <div class="text-center text-2xl mt-32 text-gray-600 dark:text-blue-300 font-mono">
+                                        Dial *123#, *456#, or *789# to start
+                                    </div>
+                                </div>
+
+                                <!-- Input Display Area -->
+                                <div class="flex border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                                    <div id="displayInput" class="flex-grow h-14 p-4 text-center font-mono text-xl text-gray-800 dark:text-gray-200"></div>
+                                    <button onclick="backspace()" class="px-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                                        <i class="fas fa-backspace"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="val" value="">
+
+                                <!-- Keyboard Mode Switcher -->
+                                <div class="bg-gradient-to-r from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900 p-3 flex justify-between items-center border-t border-gray-600 shadow-inner">
+                                    <div class="text-sm font-medium text-white">Keyboard Mode:</div>
+                                    <div class="flex space-x-2">
+                                        <button onclick="switchKeyboardMode('123')" id="mode123" class="px-3 py-1 bg-gray-600 hover:bg-primary text-white rounded-md transition-colors shadow-sm">123</button>
+                                        <button onclick="switchKeyboardMode('ABC')" id="modeABC" class="px-3 py-1 bg-gray-600 hover:bg-primary text-white rounded-md transition-colors shadow-sm">ABC</button>
+                                        <button onclick="switchKeyboardMode('abc')" id="modeabc" class="px-3 py-1 bg-gray-600 hover:bg-primary text-white rounded-md transition-colors shadow-sm">abc</button>
+                                    </div>
+                                </div>
+
+                                <!-- Number Keypad -->
+                                <div id="keypad123" class="bg-gray-100 dark:bg-gray-800 p-3 overflow-y-auto max-h-[300px]">
+                                    <div class="grid grid-cols-3 gap-2 max-w-full">
+                                        <button onclick="addToScreen('1')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">1</button>
+                                        <button onclick="addToScreen('2')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">2</button>
+                                        <button onclick="addToScreen('3')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">3</button>
+                                        <button onclick="addToScreen('4')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">4</button>
+                                        <button onclick="addToScreen('5')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">5</button>
+                                        <button onclick="addToScreen('6')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">6</button>
+                                        <button onclick="addToScreen('7')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">7</button>
+                                        <button onclick="addToScreen('8')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">8</button>
+                                        <button onclick="addToScreen('9')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">9</button>
+                                        <button onclick="addToScreen('*')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">*</button>
+                                        <button onclick="addToScreen('0')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">0</button>
+                                        <button onclick="addToScreen('#')" class="phone-button h-14 text-xl dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">#</button>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button onclick="callUssdService()" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg h-16 text-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 relative overflow-hidden">
+                                            <span class="relative z-10">SEND</span>
+                                            <div class="absolute inset-0 bg-white opacity-10 animate-pulse"></div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Uppercase Letters Keypad -->
+                                <div id="keypadABC" class="bg-gray-100 dark:bg-gray-800 p-3 overflow-y-auto max-h-[300px]" style="display: none;">
+                                    <div class="grid grid-cols-5 gap-2 max-w-full mb-2">
+                                        <button onclick="addToScreen('A')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">A</button>
+                                        <button onclick="addToScreen('B')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">B</button>
+                                        <button onclick="addToScreen('C')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">C</button>
+                                        <button onclick="addToScreen('D')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">D</button>
+                                        <button onclick="addToScreen('E')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">E</button>
+                                        <button onclick="addToScreen('F')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">F</button>
+                                        <button onclick="addToScreen('G')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">G</button>
+                                        <button onclick="addToScreen('H')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">H</button>
+                                        <button onclick="addToScreen('I')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">I</button>
+                                        <button onclick="addToScreen('J')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">J</button>
+                                        <button onclick="addToScreen('K')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">K</button>
+                                        <button onclick="addToScreen('L')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">L</button>
+                                        <button onclick="addToScreen('M')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">M</button>
+                                        <button onclick="addToScreen('N')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">N</button>
+                                        <button onclick="addToScreen('O')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">O</button>
+                                        <button onclick="addToScreen('P')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">P</button>
+                                        <button onclick="addToScreen('Q')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">Q</button>
+                                        <button onclick="addToScreen('R')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">R</button>
+                                        <button onclick="addToScreen('S')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">S</button>
+                                        <button onclick="addToScreen('T')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">T</button>
+                                        <button onclick="addToScreen('U')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">U</button>
+                                        <button onclick="addToScreen('V')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">V</button>
+                                        <button onclick="addToScreen('W')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">W</button>
+                                        <button onclick="addToScreen('X')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">X</button>
+                                        <button onclick="addToScreen('Y')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">Y</button>
+                                        <button onclick="addToScreen('Z')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">Z</button>
+                                        <p></p>
+                                    </div>
+                                    <div class="mt-4">
+                                        <button onclick="callUssdService()" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg h-16 text-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 relative overflow-hidden">
+                                            <span class="relative z-10">SEND</span>
+                                            <div class="absolute inset-0 bg-white opacity-10 animate-pulse"></div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Lowercase Letters Keypad -->
+                                <div id="keypadabc" class="bg-gray-100 dark:bg-gray-800 p-3 overflow-y-auto max-h-[300px]" style="display: none;">
+                                    <div class="grid grid-cols-5 gap-2 max-w-full mb-2">
+                                        <button onclick="addToScreen('a')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">a</button>
+                                        <button onclick="addToScreen('b')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">b</button>
+                                        <button onclick="addToScreen('c')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">c</button>
+                                        <button onclick="addToScreen('d')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">d</button>
+                                        <button onclick="addToScreen('e')" class="phone-button h-12 text-lg dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">e</button>
+                                        <button onclick="addToScreen('f')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">f</button>
+                                        <button onclick="addToScreen('g')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">g</button>
+                                        <button onclick="addToScreen('h')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">h</button>
+                                        <button onclick="addToScreen('i')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">i</button>
+                                        <button onclick="addToScreen('j')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">j</button>
+                                        <button onclick="addToScreen('k')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">k</button>
+                                        <button onclick="addToScreen('l')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">l</button>
+                                        <button onclick="addToScreen('m')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">m</button>
+                                        <button onclick="addToScreen('n')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">n</button>
+                                        <button onclick="addToScreen('o')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">o</button>
+                                        <button onclick="addToScreen('p')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">p</button>
+                                        <button onclick="addToScreen('q')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">q</button>
+                                        <button onclick="addToScreen('r')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">r</button>
+                                        <button onclick="addToScreen('s')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">s</button>
+                                        <button onclick="addToScreen('t')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">t</button>
+                                        <button onclick="addToScreen('u')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">u</button>
+                                        <button onclick="addToScreen('v')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">v</button>
+                                        <button onclick="addToScreen('w')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">w</button>
+                                        <button onclick="addToScreen('x')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">x</button>
+                                        <button onclick="addToScreen('y')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">y</button>
+                                        <button onclick="addToScreen('z')" class="phone-button h-10 dark:bg-gray-700 dark:text-gray-200">z</button>
+                                    </div>
+                                    <div class="mt-4">
+                                        <button onclick="callUssdService()" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-lg h-16 text-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 relative overflow-hidden">
+                                            <span class="relative z-10">SEND</span>
+                                            <div class="absolute inset-0 bg-white opacity-10 animate-pulse"></div>
+                                        </button>
+                                    </div>
+                                </div>
+
+
+
+                            </div>
+                            <div class="phone-home-indicator"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Initialize global variables
+            var myStorage = window.localStorage;
+            var textInputSummary = '';
+
+            // Wait for the document to be fully loaded
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('Document fully loaded');
+                // Initialize the emulator
+                initializeEmulator();
+            });
+
+            // Function to initialize the emulator
+            function initializeEmulator() {
+                console.log('Initializing emulator');
+                // Set up with hardcoded values
+                const hardcodedPhone = "260123456789";
+                const hardcodedSessionId = "ussd_session_" + Math.random().toString(36).substring(2, 15);
+
+                myStorage.setItem('mobile_number', hardcodedPhone);
+                myStorage.setItem('session_id', hardcodedSessionId);
+                myStorage.removeItem('text');
+
+                // Reset input value
+                textInputSummary = '';
+                $('#val').val('');
+                $('#displayInput').html('');
+
+                // Set the initial display text
+                $('#displayOutput').html('<div class="text-center text-xl mt-20 text-gray-600 dark:text-blue-300">Dial *123#, *456#, or *789# to start</div>');
+
+                $('#phonenumber').val(hardcodedPhone.substring(3));
+                $('#phonenumber').attr('readOnly', true);
+                $('#startAfreshButton').html('End Test');
+                $('#startAfreshButton').removeClass("bg-primary").addClass("bg-danger");
+                $('#emulatorDiv').removeClass('hidden');
+                $('.svnum').removeClass('hidden');
+
+                // Update status bar time immediately and then every second
+                updateDateTime();
+                setInterval(updateDateTime, 1000);
+
+                // Set the initial keyboard mode
+                var savedMode = myStorage.getItem('keyboardMode') || '123';
+                console.log('Initial keyboard mode:', savedMode);
+
+                // Make sure all keypads are hidden initially
+                $('#keypad123').hide();
+                $('#keypadABC').hide();
+                $('#keypadabc').hide();
+
+                // Then show the appropriate one
+                setTimeout(function() {
+                    switchKeyboardMode(savedMode);
+                }, 500);
+            }
+
+            function switchKeyboardMode(mode) {
+                console.log('Switching to mode:', mode);
+
+                // Hide all keypads
+                $('#keypad123').hide();
+                $('#keypadABC').hide();
+                $('#keypadabc').hide();
+
+                // Reset all mode buttons
+                $('#mode123').removeClass('bg-primary').removeClass('text-white').addClass('bg-gray-300').addClass('dark:bg-gray-600').addClass('text-gray-700').addClass('dark:text-gray-300');
+                $('#modeABC').removeClass('bg-primary').removeClass('text-white').addClass('bg-gray-300').addClass('dark:bg-gray-600').addClass('text-gray-700').addClass('dark:text-gray-300');
+                $('#modeabc').removeClass('bg-primary').removeClass('text-white').addClass('bg-gray-300').addClass('dark:bg-gray-600').addClass('text-gray-700').addClass('dark:text-gray-300');
+
+                // Show the selected keypad and highlight the mode button
+                if (mode === '123') {
+                    console.log('Showing 123 keypad');
+                    $('#keypad123').show();
+                    $('#mode123').removeClass('bg-gray-300').removeClass('text-gray-700').addClass('bg-primary').addClass('text-white');
+                } else if (mode === 'ABC') {
+                    console.log('Showing ABC keypad');
+                    $('#keypadABC').show();
+                    $('#modeABC').removeClass('bg-gray-300').removeClass('text-gray-700').addClass('bg-primary').addClass('text-white');
+                } else if (mode === 'abc') {
+                    console.log('Showing abc keypad');
+                    $('#keypadabc').show();
+                    $('#modeabc').removeClass('bg-gray-300').removeClass('text-gray-700').addClass('bg-primary').addClass('text-white');
+                }
+
+                // Save the current mode to localStorage
+                myStorage.setItem('keyboardMode', mode);
+            }
+
+            function addToScreen(x) {
+                console.log('Adding to screen:', x);
+
+                // Make sure jQuery is loaded
+                if (typeof $ === 'undefined') {
+                    console.error('jQuery is not loaded!');
+                    alert('Error: jQuery is not loaded. Please refresh the page.');
+                    return;
+                }
+
+                // Get the current value from the display input
+                var currentVal = $('#displayInput').html() || '';
+                console.log('Current display value:', currentVal);
+
+                // Update the text input summary
+                textInputSummary = (textInputSummary || '') + x;
+                console.log('Updated text input summary:', textInputSummary);
+
+                // Update the hidden input value
+                $('#val').val(textInputSummary);
+
+                // Update the display input
+                $('#displayInput').html(currentVal + x);
+                console.log('Updated display input:', $('#displayInput').html());
+
+                // Also update the display output if it's the initial state
+                var displayOutput = $('#displayOutput').html() || '';
+                console.log('Current display output:', displayOutput);
+
+                if (displayOutput.includes('Dial *123#') || displayOutput.includes('dial *123#')) {
+                    var newOutput = '<div class="text-center text-xl mt-20 text-gray-600 dark:text-blue-300">Dialing ' + textInputSummary + '</div>';
+                    $('#displayOutput').html(newOutput);
+                    console.log('Updated display output:', newOutput);
+                }
+            }
+
+            function backspace() {
+                console.log('Backspace pressed');
+                var currentVal = $('#val').val() || '';
+                if(currentVal.length > 0) {
+                    currentVal = currentVal.substring(0, currentVal.length-1);
+                    $('#val').val(currentVal);
+                    $('#displayInput').html(currentVal);
+                    textInputSummary = currentVal;
+
+                    // Also update the display output if we're dialing
+                    var displayOutput = $('#displayOutput').html() || '';
+                    if (displayOutput.includes('Dialing ')) {
+                        if (currentVal.length > 0) {
+                            $('#displayOutput').html('<div class="text-center text-xl mt-20 text-gray-600 dark:text-blue-300">Dialing ' + currentVal + '</div>');
+                        } else {
+                            $('#displayOutput').html('<div class="text-center text-xl mt-20 text-gray-600 dark:text-blue-300">Dial *123#, *456#, or *789# to start</div>');
+                        }
+                    }
+                }
+            }
+
+            function saveNumber() {
+                if (typeof(Storage) !== "undefined") {
+                    // Use hardcoded values
+                    const hardcodedPhone = "260123456789";
+                    const hardcodedSessionId = "ussd_session_" + Math.random().toString(36).substring(2, 15);
+
+                    myStorage.setItem('mobile_number', hardcodedPhone);
+                    myStorage.setItem('session_id', hardcodedSessionId);
+
+                    // Display the phone number in the input field
+                    $('#phonenumber').val(hardcodedPhone.substring(3));
+                    $('#phonenumber').attr('readOnly', true);
+                    $('#emulatorDiv').removeClass('hidden');
+                } else {
+                    alert('Local storage not supported in your browser')
+                }
+            }
+
+            function callUssdService() {
+                $('#displayInput').html("");
+                // Always use hardcoded phone number
+                const hardcodedPhone = "260123456789";
+                myStorage.setItem('mobile_number', hardcodedPhone);
+
+                textInputSummary = '';
+                var textValue = myStorage.getItem('text');
+                var currentValue = $('#val').val();
+                    if(textValue != undefined) {
+                        textValue = textValue + '*' + currentValue;
+                    } else {
+                        textValue = currentValue;
+                    }
+                    var service_code = textValue.substring(0, 5);
+                    myStorage.setItem('text', textValue);
+                    if (service_code=='*123#' || currentValue == '*123#' || service_code=='*456#' || currentValue == '*456#' || service_code=='*789#' || currentValue == '*789#') {
+                        // Hard code the phone number and session ID
+                        const hardcodedPhone = "260123456789";
+                        const hardcodedSessionId = "ussd_session_" + Math.random().toString(36).substring(2, 15);
+
+                        // Store the current USSD code for future reference
+                        if (currentValue.includes('#')) {
+                            myStorage.setItem('current_ussd_code', currentValue);
+                        }
+
+                        // Get the current USSD code or default to *123#
+                        const currentUssdCode = myStorage.getItem('current_ussd_code') || '*123#';
+
+                        $.ajax({
+                            url: "/api/ussd",
+                            type: "post",
+                            contentType: "application/json",
+                            data: JSON.stringify({
+                                phoneNumber: hardcodedPhone,
+                                sessionId: hardcodedSessionId,
+                                text: (currentValue == '*123#' || currentValue == '*456#' || currentValue == '*789#') ? "" : currentValue,
+                                ussdCode: currentUssdCode
+                            }),
+                            success: function(response) {
+                                console.log('USSD response:', response);
+                                var message = response.message;
+                                message = (message + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1'+ '<br>' +'$2');
+                                $('#displayOutput').html('<div class="p-2 bg-white dark:bg-transparent dark:text-blue-300 rounded-lg shadow-sm dark:shadow-none">' + message + '</div>');
+                                $('#val').val("");
+
+                                // If the response starts with "END", clear the session
+                                if (response.message && response.message.startsWith("END")) {
+                                    myStorage.removeItem('text');
+                                }
+
+                                // Store the USSD code used for this session
+                                if (currentValue.endsWith('#')) {
+                                    myStorage.setItem('ussd_code', currentValue);
+                                }
+                            },
+                            error: function(xhr) {
+                                console.error('USSD request error:', xhr);
+                                $('#displayOutput').html('<div class="p-2 text-red-500 dark:text-red-400">Error processing request. Please try again.</div>');
+                            }
+                        });
+                    } else {
+                        $('#displayOutput').html('<div class="p-2 text-center text-gray-600 dark:text-blue-300">Please dial *123#, *456#, or *789# to start</div>');
+                    }
+                }
+
+            function makeid(length) {
+                var result = '';
+                var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                var charactersLength = characters.length;
+                for (var i = 0; i < length; i++) {
+                    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                }
+                return result;
+            }
+
+            function startAfresh() {
+                var checkText = $('#startAfreshButton').html();
+                if(checkText == 'End Test') {
+                    // Clear all session data
+                    myStorage.removeItem('keyboardMode');
+                    myStorage.removeItem('mobile_number');
+                    myStorage.removeItem('session_id');
+                    myStorage.removeItem('text');
+
+                    // Reset UI
+                    $('#startAfreshButton').html('Start Session');
+                    $('#startAfreshButton').removeClass("bg-danger").addClass("bg-primary");
+                    $('#phonenumber').val("123456789");
+                    // Keep emulator visible
+                    $('#phonenumber').attr('readOnly', true);
+                    $('.svnum').removeClass('hidden');
+
+                    // Reset display
+                    $('#displayOutput').html('<div class="text-center text-xl mt-20 text-gray-600 dark:text-blue-300">Dial *123#, *456#, or *789# to start</div>');
+                    $('#displayInput').html("");
+                    $('#val').val("");
+
+                    // Reset keyboard mode
+                    switchKeyboardMode('123');
+                } else if(checkText=='Start Session') {
+                    // Set up with hardcoded values
+                    const hardcodedPhone = "260123456789";
+                    const hardcodedSessionId = "ussd_session_" + Math.random().toString(36).substring(2, 15);
+
+                    myStorage.setItem('mobile_number', hardcodedPhone);
+                    myStorage.setItem('session_id', hardcodedSessionId);
+
+                    $('#startAfreshButton').html('End Test');
+                    $('#startAfreshButton').removeClass("bg-primary").addClass("bg-danger");
+                    $('#phonenumber').val(hardcodedPhone.substring(3));
+                    $('#phonenumber').attr('readOnly', true);
+                    $('.svnum').removeClass('hidden');
+                }
+            }
+
+            // Function to update time in status bar
+            function updateDateTime() {
+                const now = new Date();
+
+                // Format status bar time: 12:34
+                const statusBarTimeOptions = { hour: 'numeric', minute: '2-digit', hour12: false };
+                const statusBarTimeStr = now.toLocaleTimeString('en-US', statusBarTimeOptions);
+                $('#statusBarTime').text(statusBarTimeStr);
+            }
+
+            // Use DOMContentLoaded instead of $(document).ready
+        </script>
+    </body>
+</html>
