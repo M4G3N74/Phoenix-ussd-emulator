@@ -26,8 +26,8 @@ A web-based USSD emulator built with Phoenix LiveView and styled with Tailwind C
 1. Clone the repository
 
    ```bash
-   git clone https://github.com/yourusername/ussd_emulator.git
-   cd ussd_emulator
+   git clone https://github.com/M4G3N74/Phoenix-ussd-emulator.git
+   cd Phoenix-ussd-emulator
    ```
 
 2. Install dependencies
